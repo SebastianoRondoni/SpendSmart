@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using SpendSmart.Models;
 using SpendSmart.Services;
+using Azure.Identity;
+using Azure.Extensions.AspNetCore.Configuration.Secrets;
 
 namespace SpendSmart
 {
@@ -10,11 +12,19 @@ namespace SpendSmart
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            var keyVaultName = "mvc";
+            var kvUri = new Uri($"https://{keyVaultName}.vault.azure.net/");
+            builder.Configuration.AddAzureKeyVault(kvUri, new DefaultAzureCredential());
+            var connectionString = builder.Configuration["SqlConnection"];
+
             // Add services to the container.
             builder.Services.AddControllersWithViews();
+            //builder.Services.AddDbContext<SpendSmartDbContext>(options =>   per usare in memory
+            //    options.UseInMemoryDatabase("SpendSmartDb")
+            //);
+
             builder.Services.AddDbContext<SpendSmartDbContext>(options =>
-                options.UseInMemoryDatabase("SpendSmartDb")
-            );
+                options.UseSqlServer(connectionString));
 
             builder.Services.AddScoped(typeof(IGenericService<>), typeof(GenericService<>));
 
